@@ -31,6 +31,8 @@ namespace MTConnectSharp
 		public bool IsAgent { get; private set; }
 		
 		public XElement Model { get; private set; }
+		
+		public XDocument ParentModel { get; private set; }
 
 		/// <summary>
 		/// The DataItems which are direct children of the device
@@ -64,7 +66,7 @@ namespace MTConnectSharp
       /// Creates a new device from an MTConnect XML device node
       /// </summary>
       /// <param name="xElem">The MTConnect XML node which defines the device</param>
-      internal Device(XElement xElem = null) 
+      internal Device(XElement xElem = null, XDocument xDoc = null) 
       {
 		DataItems = new ReadOnlyObservableCollection<IDataItem>(_dataItems);
 		Components = new ReadOnlyObservableCollection<IComponent>(_components);
@@ -72,6 +74,7 @@ namespace MTConnectSharp
 		if (xElem?.Name.LocalName == "Device" || xElem?.Name.LocalName == "Agent")
 		{
 			Model = xElem;
+			ParentModel = xDoc;
 			IsAgent = xElem?.Name.LocalName == "Agent";
 			
 			// Populate basic fields

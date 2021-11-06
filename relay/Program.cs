@@ -30,7 +30,8 @@ namespace mtc_spb_relay
                     
                     //services.AddHostedService<Bridge.Example01>();
                     //services.AddHostedService<Bridge.Example02>();
-                    services.AddHostedService<Bridge.AaronV3>();
+                    //services.AddHostedService<Bridge.AaronV3>();
+                    services.AddHostedService<Bridge.SimonV1>();
                     
                     
                     
@@ -40,11 +41,11 @@ namespace mtc_spb_relay
                     
                     services.AddSingleton(sp => new SparkplugB.ClientServiceOptions()
                     {
-                        BrokerAddress = "10.20.30.112",
+                        BrokerAddress = "10.20.30.114",
                         BrokerPort = 1883,
                         UseTls = false,
-                        Username = "",
-                        Password = "",
+                        Username = "admin",
+                        Password = "password",
                         ClientId = Guid.NewGuid().ToString()
                     });
                     

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -11,12 +12,19 @@ namespace mtc_spb_relay.Bridge
 {
     /// <summary>
     /// https://drive.google.com/file/d/1PAJKLUUCviN_Q3dus65t5fl_yBNrjSxp/view?usp=sharing
+    /// 
+    ///     We should follow the entire rules. Roughly @composition’s_type_if_any + @subType
+    ///     + @type and append “[name]” if conflict. There are additional handling if “statistic” or
+    ///     “representation” attribute is present. Full details are in the OPCUA companion spec page 36.
+    ///
+    ///     Using Mazak-5717 model as an example, Data Item “temperature” under “Linear X” has
+    ///     compositiion id “Xmotor” and its type is “Motor”. So the name of this data item is “MotorTemperature”
     /// </summary>
-    public class AaronV3: Example02
+    public class SimonV1: Example02
     {
         #region Service
         
-        public AaronV3(
+        public SimonV1(
             IHostApplicationLifetime appLifetime,
             SparkplugB.ClientServiceOptions spbOptions,
             ChannelReader<MTConnect.ClientServiceOutboundChannelFrame> mtcChannelReader,
@@ -81,6 +89,7 @@ namespace mtc_spb_relay.Bridge
             properties.Add(("CanWrite", "0"));
             
             properties.Add(("MTC.Id", dataItem.Id));
+            properties.Add(("MTC.Name", dataItem.Name));
             properties.Add(("MTC.Type", dataItem.Type));
             properties.Add(("MTC.SubType", dataItem.SubType));
             properties.Add(("MTC.NativeUnits", dataItem.NativeUnits));
@@ -89,9 +98,33 @@ namespace mtc_spb_relay.Bridge
             if(dataItem.Model.Attribute("compositionId")!=null)
                 properties.Add(("MTC.CompositionId", dataItem.Model.Attribute("compositionId").Value));
 
+            var compositionType = "";
+
+            try
+            {
+                var compositionId = dataItem.Model.Attribute("compositionId").Value;
+
+                var compositions = dataItem.Model.Parent.Parent.Elements()
+                    .Where(e => e.Name.LocalName == "Compositions");
+                
+                compositionType = compositions.Elements()
+                    .Where(c => c.Attribute("id").Value == compositionId)
+                    .First()
+                    .Attribute("type").Value;
+            }
+            catch
+            {
+                
+            }
+
+            var name = $"{CultureInfo.CurrentCulture.TextInfo.ToTitleCase(compositionType.ToLower())}" +
+                       $"{CultureInfo.CurrentCulture.TextInfo.ToTitleCase(dataItem.SubType.ToLower())}" +
+                       $"{CultureInfo.CurrentCulture.TextInfo.ToTitleCase(dataItem.Type.ToLower())}" +
+                       $"{(string.IsNullOrEmpty(dataItem.Name)?CultureInfo.CurrentCulture.TextInfo.ToTitleCase(dataItem.Id.ToLower()):CultureInfo.CurrentCulture.TextInfo.ToTitleCase(dataItem.Name.ToLower()))}";
+            
             list.Add(new
             {
-                name = $"{path}{(string.IsNullOrEmpty(path)?"":"/")}{dataItem.Type}-{dataItem.Id}",
+                name = $"{path}{(string.IsNullOrEmpty(path)?"":"/")}{name}",
                 value = dataItem.CurrentSample.Value,
                 properties
             });

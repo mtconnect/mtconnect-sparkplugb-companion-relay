@@ -272,7 +272,7 @@ namespace MTConnectSharp
 				.Where(d => d.Name.LocalName == "Devices")
 				.Take(1) // needed? 
 				.SelectMany(d => d.Elements())
-				.Select(d => new Device(d));
+				.Select(d => new Device(d, xdoc));
 			
 			_devices.AddRange(devices);
 
